@@ -1,16 +1,19 @@
-const express          = require('express');
-const { USERS, POSTS } = require('./models.js');
+const express                  = require('express');
+const mongoose                 = require('mongoose');
+const { userModel, postModel } = require('./models.js');
+
+mongoose.connect('mongodb://localhost/pagination-mern');
 
 const app = express();
 
 /* TODO:
  * 3. Implement standard practices
  */
-app.get('/users', getPaginatedResult(USERS), (req, res) => {
+app.get('/users', getPaginatedResult(userModel), (req, res) => {
 	res.json(res.paginatedResult);
 });
 
-app.get('/posts', getPaginatedResult(POSTS), (req, res) => {
+app.get('/posts', getPaginatedResult(postModel), (req, res) => {
 	res.json(res.paginatedResult);
 });
 
@@ -20,7 +23,7 @@ app.listen(3000, () => {
 });
 
 function getPaginatedResult(model) {
-	return (req, res, next) => {
+	return async (req, res, next) => {
 		const page  = parseInt(req.query?.page);
 		const limit = parseInt(req.query?.limit);
 
@@ -29,8 +32,12 @@ function getPaginatedResult(model) {
 		const resultObject = {};
 
 		if (!page && !limit) {
-			res.paginatedResult = model;
-			return next();
+			try {
+				res.paginatedResult = await model.find().exec();
+				return next();
+			} catch (e) {
+				return res.status(500).json({ message: e.message });
+			}
 		}
 
 		const startIndex = (page - 1) * limit;
@@ -39,9 +46,11 @@ function getPaginatedResult(model) {
 
 		console.log({ startIndex, endIndex });
 
-		const result = model.slice(startIndex, endIndex);
-
-		resultObject.result = result;
+		try {
+			resultObject.result = await model.find().skip(startIndex).limit(limit).exec();
+		} catch (e) {
+			return res.status(500).json({ message: e.message });
+		}
 
 		if (endIndex < model.length) {
 			resultObject.next = {
@@ -57,7 +66,7 @@ function getPaginatedResult(model) {
 			}
 		}
 
-		console.table(resultObject);
+		console.log(resultObject);
 
 		res.paginatedResult = resultObject;
 		return next();

@@ -1,67 +1,32 @@
-const USERS = [
-  {
-    "id": 0,
-    "email": "user837@example.com",
-    "name": "John"
-  },
-  {
-    "id": 1,
-    "email": "user492@example.com",
-    "name": "Alice"
-  },
-  {
-    "id": 2,
-    "email": "user215@example.com",
-    "name": "Bob"
-  },
-  {
-    "id": 3,
-    "email": "user741@example.com",
-    "name": "David"
-  },
-  {
-    "id": 4,
-    "email": "user998@example.com",
-    "name": "Olivia"
-  },
-  {
-    "id": 5,
-    "email": "user104@example.com",
-    "name": "Michael"
-  }
-];
+const mongoose = require('mongoose');
 
-const POSTS = [
-  {
-    "id": 0,
-    "post": "Post 1",
-    "name": "John"
-  },
-  {
-    "id": 1,
-    "post": "Post 2",
-    "name": "Alice"
-  },
-  {
-    "id": 2,
-    "post": "Post 3",
-    "name": "Bob"
-  },
-  {
-    "id": 3,
-    "post": "Post 4",
-    "name": "David"
-  },
-  {
-    "id": 4,
-    "post": "Post 5",
-    "name": "Olivia"
-  },
-  {
-    "id": 5,
-    "post": "Post 6",
-    "name": "Michael"
-  }
-];
+const userSchema = new mongoose.Schema({
+	id         : { type: String, required: true, index: { unique: true }, lowercase: true, match: /^[a-zA-Z0-9\-_.@\.:]+$/ },
+	authVia    : { type: String, required: true },
+	firstName  : { type: String, required: true },
+	lastName   : { type: String, required: true },
+	email      : { type: String, index: true, lowercase: true, match: /^(([^<>()\[\]\\.,;:\s@']+(\.[^<>()\[\]\\.,;:\s@']+)*)|('.+'))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/ },
+	status     : { type: String, required: true, enum: [ 'active', 'inactive', 'deleted' ] },
+	custom     : { type: mongoose.Schema.Types.Mixed, default: {} },
+	createdTs  : { type: Date,   required: true },
+	createdBy  : { type: String, required: true, lowercase: true, match: /^[a-zA-Z0-9\-_.@\.:]+$/ },
+	modifiedTs : { type: Date },
+	modifiedBy : { type: String, lowercase: true, match: /^[a-zA-Z0-9\-_.@\.:]+$/ },
+	version    : { type: Number, default: 1 },
+	orgId      : { type: mongoose.Schema.Types.ObjectId, required: false },
+	roleId     : { type: String, required: true },
+	isVerified : { type: Boolean },
+	locale     : { type: String, default: 'en', enum: ['en', 'es'] },
+});
 
-module.exports = { USERS, POSTS };
+const postSchema = new mongoose.Schema({
+	id        : { type: String, required: true, index: { unique: true }, lowercase: true, match: /^[a-zA-Z0-9\-_.@\.:]+$/ },
+	createdTs : { type: Date,   required: true },
+	createdBy : { type: String, required: true, lowercase: true, match: /^[a-zA-Z0-9\-_.@\.:]+$/ },
+	post      : { type: String },
+});
+
+const userModel = mongoose.model('User', userSchema);
+const postModel = mongoose.model('Post', userSchema);
+
+module.exports = { userModel, postModel };
